@@ -299,18 +299,10 @@ function install_node() {
 
     echo "所有服务启动完成！"
     echo "当前运行的服务："
-    echo "1. bento 服务 (screen 会话名: bento)"
-    echo "2. broker 服务 (screen 会话名: broker)"
-    echo ""
-    echo "使用以下命令管理服务："
-    echo "screen -r bento     # 连接到 bento 服务会话"
-    echo "screen -r broker    # 连接到 broker 服务会话"
-    echo "screen -ls          # 列出所有会话"
-    echo ""
+    echo "bento 服务 (screen 会话名: bento)"
+    echo "broker 服务 (screen 会话名: broker)"
     echo "在 screen 会话中："
     echo "按 Ctrl+A 然后按 D 可以断开连接但保持程序运行"
-    echo "按 Ctrl+A 然后按 K 可以终止会话"
-    echo ""
     echo "脚本执行完成！"
 
     # 安装完成后返回主菜单
