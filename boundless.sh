@@ -60,19 +60,21 @@ function install_node() {
     echo "检查 Docker 安装状态..."
     if ! command -v docker &> /dev/null; then
         echo "正在安装 Docker..."
-        # 更新包列表
+        # 更新软件包列表
         apt-get update
         # 安装必要的依赖
         apt-get install -y ca-certificates curl gnupg
-        # 添加 Docker 的官方 GPG 密钥
+        # 创建密钥存储目录
         install -m 0755 -d /etc/apt/keyrings
+        # 下载并添加 Docker 的官方 GPG 密钥
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        # 设置密钥权限
         chmod a+r /etc/apt/keyrings/docker.gpg
-        # 设置 Docker 仓库
+        # 配置 Docker 仓库
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        # 更新包列表
+        # 再次更新软件包列表
         apt-get update
-        # 安装 Docker
+        # 安装 Docker 相关组件
         apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         # 将当前用户添加到 docker 组
         usermod -aG docker $SUDO_USER
@@ -82,45 +84,27 @@ function install_node() {
     echo "检查 NVIDIA Docker 支持..."
     if ! command -v nvidia-docker &> /dev/null; then
         echo "正在安装 NVIDIA Container Toolkit..."
-        # 添加 NVIDIA 包仓库
+        # 获取系统发行版信息
         distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+        # 添加 NVIDIA 包仓库的 GPG 密钥
         curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
+        # 配置 NVIDIA Docker 仓库
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
-        # 更新包列表
+        # 更新软件包列表
         apt-get update
         # 安装 NVIDIA Container Toolkit
         apt-get install -y nvidia-container-toolkit
-        # 重启 Docker 守护进程
+        # 重启 Docker 服务
         systemctl restart docker
         echo "NVIDIA Container Toolkit 安装完成"
-    fi
-
-    echo "检查 Rust 安装状态..."
-    if ! command -v rustc &> /dev/null; then
-        echo "正在安装 Rust..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        # 加载 Rust 环境变量
-        source "$HOME/.cargo/env"
-        echo "Rust 安装完成"
-    fi
-
-    echo "检查 bento-cli 安装状态..."
-    if ! command -v bento_cli &> /dev/null; then
-        echo "正在安装 bento-cli..."
-        # 确保 cargo 在 PATH 中
-        source "$HOME/.cargo/env"
-        cargo install --git https://github.com/risc0/risc0 bento-client --bin bento_cli
-        if [ $? -ne 0 ]; then
-            echo "bento-cli 安装失败，请检查网络连接或手动安装"
-            exit 1
-        fi
-        echo "bento-cli 安装完成"
     fi
 
     echo "检查 screen 安装状态..."
     if ! command -v screen &> /dev/null; then
         echo "正在安装 screen..."
+        # 更新软件包列表
         apt-get update
+        # 安装 screen
         apt-get install -y screen
         if [ $? -ne 0 ]; then
             echo "screen 安装失败，请手动安装"
@@ -132,6 +116,7 @@ function install_node() {
     echo "检查 just 安装状态..."
     if ! command -v just &> /dev/null; then
         echo "正在安装 just..."
+        # 下载并安装 just
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
         if [ $? -ne 0 ]; then
             echo "just 安装失败，请手动安装"
@@ -142,6 +127,7 @@ function install_node() {
 
     echo "开始克隆仓库..."
     if [ ! -d "boundless" ]; then
+        # 克隆 boundless 仓库
         git clone https://github.com/boundless-xyz/boundless
         if [ $? -ne 0 ]; then
             echo "克隆失败，请检查网络连接或仓库地址是否正确"
@@ -151,14 +137,150 @@ function install_node() {
 
     cd boundless
     echo "切换到 release-0.9 分支..."
+    # 切换到指定分支
     git checkout release-0.9
     if [ $? -ne 0 ]; then
         echo "切换分支失败，请检查分支名称是否正确"
         exit 1
     fi
 
+    echo "安装 Rust 和相关工具链..."
+
+    # 安装 rustup
+    echo "正在安装 rustup..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    # 加载 Rust 环境变量
+    source "$HOME/.cargo/env"
+    if [ $? -ne 0 ]; then
+        echo "rustup 安装失败，请检查网络连接或手动安装"
+        exit 1
+    fi
+    echo "rustup 安装完成"
+
+    # 更新 rustup
+    echo "正在更新 rustup..."
+    rustup update
+    if [ $? -ne 0 ]; then
+        echo "rustup 更新失败，请检查网络连接或手动更新"
+        exit 1
+    fi
+    echo "rustup 更新完成"
+
+    # 安装 Rust 工具链
+    echo "正在安装 Rust 工具链..."
+    apt-get update
+    apt-get install -y cargo
+    if [ $? -ne 0 ]; then
+        echo "Rust 工具链安装失败，请手动安装"
+        exit 1
+    fi
+    echo "Rust 工具链安装完成"
+
+    # 验证 Cargo
+    echo "验证 Cargo 安装..."
+    cargo --version
+    if [ $? -ne 0 ]; then
+        echo "Cargo 验证失败，请检查安装"
+        exit 1
+    fi
+    echo "Cargo 验证通过"
+
+    # 安装 rzup
+    echo "正在安装 rzup..."
+    curl -L https://risczero.com/install | bash
+    # 刷新 bashrc 配置
+    source ~/.bashrc
+    if [ $? -ne 0 ]; then
+        echo "rzup 安装失败，请检查网络连接或手动安装"
+        exit 1
+    fi
+    echo "rzup 安装完成"
+
+    # 验证 rzup
+    echo "验证 rzup 安装..."
+    rzup --version
+    if [ $? -ne 0 ]; then
+        echo "rzup 验证失败，请检查安装"
+        exit 1
+    fi
+    echo "rzup 验证通过"
+
+    # 安装 RISC Zero Rust 工具链
+    echo "正在安装 RISC Zero Rust 工具链..."
+    rzup install rust
+    if [ $? -ne 0 ]; then
+        echo "RISC Zero Rust 工具链安装失败，请手动安装"
+        exit 1
+    fi
+    echo "RISC Zero Rust 工具链安装完成"
+
+    # 安装 cargo-risczero
+    echo "正在安装 cargo-risczero..."
+    cargo install cargo-risczero
+    rzup install cargo-risczero
+    if [ $? -ne 0 ]; then
+        echo "cargo-risczero 安装失败，请检查网络连接或手动安装"
+        exit 1
+    fi
+    echo "cargo-risczero 安装完成"
+
+    # 再次更新 rustup
+    echo "再次更新 rustup..."
+    rustup update
+    if [ $? -ne 0 ]; then
+        echo "rustup 更新失败，请检查网络连接或手动更新"
+        exit 1
+    fi
+    echo "rustup 更新完成"
+
+    # 安装 Bento-client
+    echo "正在安装 bento-client..."
+    cargo install --git https://github.com/risc0/risc0 bento-client --bin bento_cli
+    # 将 cargo bin 路径添加到 bashrc
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+    # 刷新 bashrc 配置
+    source ~/.bashrc
+    if [ $? -ne 0 ]; then
+        echo "bento-client 安装失败，请检查网络连接或手动安装"
+        exit 1
+    fi
+    echo "bento-client 安装完成"
+
+    # 验证 Bento-client
+    echo "验证 bento-client 安装..."
+    bento_cli --version
+    if [ $? -ne 0 ]; then
+        echo "bento-client 验证失败，请检查安装"
+        exit 1
+    fi
+    echo "bento-client 验证通过"
+
+    # 安装 Boundless CLI
+    echo "正在安装 boundless-cli..."
+    cargo install --locked boundless-cli
+    # 将 root 的 cargo bin 路径添加到 PATH
+    export PATH=$PATH:/root/.cargo/bin
+    # 刷新 bashrc 配置
+    source ~/.bashrc
+    if [ $? -ne 0 ]; then
+        echo "boundless-cli 安装失败，请检查网络连接或手动安装"
+        exit 1
+    fi
+    echo "boundless-cli 安装完成"
+
+    # 验证 boundless-cli
+    echo "验证 boundless-cli 安装..."
+    boundless -h
+    if [ $? -ne 0 ]; then
+        echo "boundless-cli 验证失败，请检查安装"
+        exit 1
+    fi
+    echo "boundless-cli 验证通过"
+
     echo "执行 setup.sh 脚本..."
+    # 赋予 setup.sh 执行权限
     chmod +x ./scripts/setup.sh
+    # 运行 setup.sh 脚本
     ./scripts/setup.sh
     if [ $? -ne 0 ]; then
         echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
@@ -179,7 +301,7 @@ function install_node() {
     echo "等待 5 秒后启动 bento_cli..."
     sleep 5
 
-    # 直接启动 bento_cli 并等待 image_id 显示
+    # 启动 bento_cli 并将输出保存到日志文件
     echo "正在启动 bento_cli..."
     RUST_LOG=info bento_cli -c 32 | tee /tmp/bento_cli_output.log &
     BENTO_CLI_PID=$!
@@ -190,22 +312,12 @@ function install_node() {
         sleep 1
     done
 
-    # 等待 3 秒并显示测试成功信息
+    # 显示测试成功信息并等待 3 秒
     echo "image_id 已显示，测试证明成功！"
     echo "等待 3 秒后继续安装..."
     sleep 3
 
-    # 安装 boundless-cli
-    echo "正在安装 boundless-cli..."
-    cargo install --locked boundless-cli
-    if [ $? -ne 0 ]; then
-        echo "boundless-cli 安装失败，请检查网络连接或手动安装"
-        # 清理临时文件
-        rm /tmp/bento_cli_output.log
-        exit 1
-    fi
-
-    # 清理临时文件
+    # 清理临时日志文件
     rm /tmp/bento_cli_output.log
 
     echo "boundless-cli 安装完成！"
@@ -381,7 +493,7 @@ function view_broker_logs() {
         read -p "请输入选项 [y/n]: " start_choice
         if [[ "$start_choice" == "y" || "$start_choice" == "Y" ]]; then
             echo "正在启动 broker 服务..."
-            # 直接启动 broker 服务（会自动在后台运行）
+            # 直接启动 broker 服务（后台运行）
             just broker &
             sleep 2
             echo "broker 服务已在后台启动"
@@ -402,7 +514,7 @@ function view_broker_logs() {
     echo "按回车键开始查看日志..."
     read
 
-    # 直接查看日志
+    # 查看日志
     just broker logs
 
     echo "----------------------------------------"
@@ -523,4 +635,4 @@ function multi_gpu_setup() {
 }
 
 # 启动主菜单
-main_menu 
+main_menu
