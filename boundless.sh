@@ -14,7 +14,7 @@ function main_menu() {
         echo "2) 查看质押余额"
         echo "3) 查看 broker 日志"
         echo "4) 删除节点"
-        echo "5) 多GPU版本使用"
+        echo "5) 多GPU版本使用（暂不可用）"
         echo "q) 退出脚本"
         echo "================================================================"
         read -p "请输入选项 [1/2/3/4/5/q]: " choice
@@ -60,23 +60,14 @@ function install_node() {
     echo "检查 Docker 安装状态..."
     if ! command -v docker &> /dev/null; then
         echo "正在安装 Docker..."
-        # 更新软件包列表
         apt-get update
-        # 安装必要的依赖
         apt-get install -y ca-certificates curl gnupg
-        # 创建密钥存储目录
         install -m 0755 -d /etc/apt/keyrings
-        # 下载并添加 Docker 的官方 GPG 密钥
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        # 设置密钥权限
         chmod a+r /etc/apt/keyrings/docker.gpg
-        # 配置 Docker 仓库
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        # 再次更新软件包列表
         apt-get update
-        # 安装 Docker 相关组件
         apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        # 将当前用户添加到 docker 组
         usermod -aG docker $SUDO_USER
         echo "Docker 安装完成，请注销并重新登录以使组成员身份生效"
     fi
@@ -84,17 +75,11 @@ function install_node() {
     echo "检查 NVIDIA Docker 支持..."
     if ! command -v nvidia-docker &> /dev/null; then
         echo "正在安装 NVIDIA Container Toolkit..."
-        # 获取系统发行版信息
         distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-        # 添加 NVIDIA 包仓库的 GPG 密钥
         curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add -
-        # 配置 NVIDIA Docker 仓库
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
-        # 更新软件包列表
         apt-get update
-        # 安装 NVIDIA Container Toolkit
         apt-get install -y nvidia-container-toolkit
-        # 重启 Docker 服务
         systemctl restart docker
         echo "NVIDIA Container Toolkit 安装完成"
     fi
@@ -102,9 +87,7 @@ function install_node() {
     echo "检查 screen 安装状态..."
     if ! command -v screen &> /dev/null; then
         echo "正在安装 screen..."
-        # 更新软件包列表
         apt-get update
-        # 安装 screen
         apt-get install -y screen
         if [ $? -ne 0 ]; then
             echo "screen 安装失败，请手动安装"
@@ -116,7 +99,6 @@ function install_node() {
     echo "检查 just 安装状态..."
     if ! command -v just &> /dev/null; then
         echo "正在安装 just..."
-        # 下载并安装 just
         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
         if [ $? -ne 0 ]; then
             echo "just 安装失败，请手动安装"
@@ -127,7 +109,6 @@ function install_node() {
 
     echo "开始克隆仓库..."
     if [ ! -d "boundless" ]; then
-        # 克隆 boundless 仓库
         git clone https://github.com/boundless-xyz/boundless
         if [ $? -ne 0 ]; then
             echo "克隆失败，请检查网络连接或仓库地址是否正确"
@@ -137,7 +118,6 @@ function install_node() {
 
     cd boundless
     echo "切换到 release-0.9 分支..."
-    # 切换到指定分支
     git checkout release-0.9
     if [ $? -ne 0 ]; then
         echo "切换分支失败，请检查分支名称是否正确"
@@ -145,11 +125,8 @@ function install_node() {
     fi
 
     echo "安装 Rust 和相关工具链..."
-
-    # 安装 rustup
     echo "正在安装 rustup..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    # 加载 Rust 环境变量
     source "$HOME/.cargo/env"
     if [ $? -ne 0 ]; then
         echo "rustup 安装失败，请检查网络连接或手动安装"
@@ -157,7 +134,6 @@ function install_node() {
     fi
     echo "rustup 安装完成"
 
-    # 更新 rustup
     echo "正在更新 rustup..."
     rustup update
     if [ $? -ne 0 ]; then
@@ -166,7 +142,6 @@ function install_node() {
     fi
     echo "rustup 更新完成"
 
-    # 安装 Rust 工具链
     echo "正在安装 Rust 工具链..."
     apt-get update
     apt-get install -y cargo
@@ -176,7 +151,6 @@ function install_node() {
     fi
     echo "Rust 工具链安装完成"
 
-    # 验证 Cargo
     echo "验证 Cargo 安装..."
     cargo --version
     if [ $? -ne 0 ]; then
@@ -185,10 +159,8 @@ function install_node() {
     fi
     echo "Cargo 验证通过"
 
-    # 安装 rzup
     echo "正在安装 rzup..."
     curl -L https://risczero.com/install | bash
-    # 刷新 bashrc 配置
     source ~/.bashrc
     if [ $? -ne 0 ]; then
         echo "rzup 安装失败，请检查网络连接或手动安装"
@@ -196,7 +168,6 @@ function install_node() {
     fi
     echo "rzup 安装完成"
 
-    # 验证 rzup
     echo "验证 rzup 安装..."
     rzup --version
     if [ $? -ne 0 ]; then
@@ -205,7 +176,6 @@ function install_node() {
     fi
     echo "rzup 验证通过"
 
-    # 安装 RISC Zero Rust 工具链
     echo "正在安装 RISC Zero Rust 工具链..."
     rzup install rust
     if [ $? -ne 0 ]; then
@@ -214,7 +184,6 @@ function install_node() {
     fi
     echo "RISC Zero Rust 工具链安装完成"
 
-    # 安装 cargo-risczero
     echo "正在安装 cargo-risczero..."
     cargo install cargo-risczero
     rzup install cargo-risczero
@@ -224,7 +193,6 @@ function install_node() {
     fi
     echo "cargo-risczero 安装完成"
 
-    # 再次更新 rustup
     echo "再次更新 rustup..."
     rustup update
     if [ $? -ne 0 ]; then
@@ -233,12 +201,9 @@ function install_node() {
     fi
     echo "rustup 更新完成"
 
-    # 安装 Bento-client
     echo "正在安装 bento-client..."
     cargo install --git https://github.com/risc0/risc0 bento-client --bin bento_cli
-    # 将 cargo bin 路径添加到 bashrc
     echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-    # 刷新 bashrc 配置
     source ~/.bashrc
     if [ $? -ne 0 ]; then
         echo "bento-client 安装失败，请检查网络连接或手动安装"
@@ -246,7 +211,6 @@ function install_node() {
     fi
     echo "bento-client 安装完成"
 
-    # 验证 Bento-client
     echo "验证 bento-client 安装..."
     bento_cli --version
     if [ $? -ne 0 ]; then
@@ -255,12 +219,9 @@ function install_node() {
     fi
     echo "bento-client 验证通过"
 
-    # 安装 Boundless CLI
     echo "正在安装 boundless-cli..."
     cargo install --locked boundless-cli
-    # 将 root 的 cargo bin 路径添加到 PATH
     export PATH=$PATH:/root/.cargo/bin
-    # 刷新 bashrc 配置
     source ~/.bashrc
     if [ $? -ne 0 ]; then
         echo "boundless-cli 安装失败，请检查网络连接或手动安装"
@@ -268,7 +229,6 @@ function install_node() {
     fi
     echo "boundless-cli 安装完成"
 
-    # 验证 boundless-cli
     echo "验证 boundless-cli 安装..."
     boundless -h
     if [ $? -ne 0 ]; then
@@ -278,9 +238,7 @@ function install_node() {
     echo "boundless-cli 验证通过"
 
     echo "执行 setup.sh 脚本..."
-    # 赋予 setup.sh 执行权限
     chmod +x ./scripts/setup.sh
-    # 运行 setup.sh 脚本
     ./scripts/setup.sh
     if [ $? -ne 0 ]; then
         echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
@@ -290,48 +248,7 @@ function install_node() {
     echo "所有依赖安装完成！"
     echo "请注销并重新登录以使 Docker 组成员身份生效"
 
-    # 切换到 boundless 目录
-    cd boundless
-
-    # 使用 screen 启动 bento 服务
-    echo "正在启动 bento 服务..."
-    screen -dmS bento bash -c 'just bento; exec bash'
-
-    # 等待 5 秒
-    echo "等待 5 秒后启动 bento_cli..."
-    sleep 5
-
-    # 启动 bento_cli 并将输出保存到日志文件
-    echo "正在启动 bento_cli..."
-    RUST_LOG=info bento_cli -c 32 | tee /tmp/bento_cli_output.log &
-    BENTO_CLI_PID=$!
-
-    # 等待 image_id 显示
-    echo "等待 image_id 显示..."
-    while ! grep -q "image_id" /tmp/bento_cli_output.log; do
-        sleep 1
-    done
-
-    # 显示测试成功信息并等待 3 秒
-    echo "image_id 已显示，测试证明成功！"
-    echo "等待 3 秒后继续安装..."
-    sleep 3
-
-    # 清理临时日志文件
-    rm /tmp/bento_cli_output.log
-
-    echo "boundless-cli 安装完成！"
-
-    # 设置 testnet 环境
-    echo "正在设置 testnet 环境..."
-    source <(just env testnet)
-    if [ $? -ne 0 ]; then
-        echo "设置 testnet 环境失败，请检查网络连接或手动设置"
-        exit 1
-    fi
-    echo "testnet 环境设置完成！"
-
-    # 获取用户输入并设置环境变量
+    # 获取用户输入并写入 .env.eth-sepolia 文件
     echo "请设置您的环境变量："
     echo "提示：请使用 Ethereum Sepolia 测试网的 Alchemy RPC URL"
     echo "格式：https://eth-sepolia.g.alchemy.com/v2/YOUR-API-KEY"
@@ -352,26 +269,81 @@ function install_node() {
         fi
     fi
 
-    # 导出环境变量
-    echo "正在设置环境变量..."
-    export PRIVATE_KEY="$PRIVATE_KEY"
-    export RPC_URL="$RPC_URL"
-
-    # 验证环境变量是否设置成功
+    # 验证输入是否为空
     if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
-        echo "错误：环境变量设置失败，请确保输入了有效的值"
+        echo "错误：请输入有效的 PRIVATE_KEY 和 RPC_URL"
         exit 1
     fi
 
-    echo "环境变量设置成功！"
-    echo "PRIVATE_KEY 已设置"
-    echo "RPC_URL 已设置"
+    # 避免重复写入，移除旧的 PRIVATE_KEY 和 RPC_URL（如果存在）
+    sed -i '/^PRIVATE_KEY=/d' .env.eth-sepolia 2>/dev/null
+    sed -i '/^RPC_URL=/d' .env.eth-sepolia 2>/dev/null
+
+    # 追加环境变量到 .env.eth-sepolia 文件
+    echo "正在将环境变量写入 .env.eth-sepolia..."
+    echo "PRIVATE_KEY=$PRIVATE_KEY" >> .env.eth-sepolia
+    echo "RPC_URL=$RPC_URL" >> .env.eth-sepolia
+
+    # 验证是否写入成功
+    if grep -q "PRIVATE_KEY=$PRIVATE_KEY" .env.eth-sepolia && grep -q "RPC_URL=$RPC_URL" .env.eth-sepolia; then
+        echo "环境变量已成功写入 .env.eth-sepolia 文件！"
+        # 加载 .env.eth-sepolia 文件
+        echo "正在加载环境变量..."
+        source .env.eth-sepolia
+        # 验证环境变量是否加载成功
+        if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
+            echo "错误：加载 .env.eth-sepolia 文件失败，请检查文件内容"
+            exit 1
+        fi
+        echo "环境变量加载成功！"
+    else
+        echo "错误：写入 .env.eth-sepolia 文件失败，请检查文件权限"
+        exit 1
+    fi
+
+    # 提示用户运行 bento 服务
+    echo "请在新终端中运行以下命令以启动 bento 服务："
+    echo "cd $(pwd) && just bento"
+    echo "完成后，按回车键继续..."
+    read
+
+    # 等待 5 秒
+    echo "等待 5 秒后启动 bento_cli..."
+    sleep 5
+
+    # 启动 bento_cli 并将输出保存到日志文件
+    echo "正在启动 bento_cli..."
+    RUST_LOG=info bento_cli -c 32 | tee /tmp/bento_cli_output.log &
+    BENTO_CLI_PID=$!
+
+    # 等待 image_id 显示
+    echo "等待 image_id 显示..."
+    while ! grep -q "image_id" /tmp/bento_cli_output.log; do
+        sleep 1
+    done
+
+    # 显示测试成功信息并退出
+    echo "image_id 已显示，测试证明成功！"
+    echo "正在清理并退出..."
+    kill $BENTO_CLI_PID 2>/dev/null
+    rm /tmp/bento_cli_output.log 2>/dev/null
+    sleep 3
+    exit 0
+
+    # 注意：以下代码因早期退出而不可达，保留以备后续扩展
+    # 设置 testnet 环境
+    echo "正在设置 testnet 环境..."
+    source <(just env testnet)
+    if [ $? -ne 0 ]; then
+        echo "设置 testnet 环境失败，请检查网络连接或手动设置"
+        exit 1
+    fi
+    echo "testnet 环境设置完成！"
 
     # 获取用户存款数量并执行存款
     echo "----------------------------------------"
     echo "请设置存款数量（USDC）："
     echo "注意：请确保您的账户中有足够的 USDC"
-    echo "建议：可以先存入少量 USDC 进行测试"
     echo "----------------------------------------"
 
     while true; do
@@ -398,23 +370,12 @@ function install_node() {
 
     echo "存款操作完成！"
 
-    # 使用 screen 启动 broker 服务
-    echo "正在启动 broker 服务..."
-    screen -dmS broker bash -c 'just broker; exec bash'
+    # 提示用户运行 broker 服务
+    echo "请在新终端中运行以下命令以启动 broker 服务："
+    echo "cd $(pwd) && just broker"
+    echo "完成后，按回车键继续..."
+    read
 
-    if [ $? -ne 0 ]; then
-        echo "broker 服务启动失败，请检查："
-        echo "1. screen 是否正常运行"
-        echo "2. 环境变量是否正确设置"
-        exit 1
-    fi
-
-    echo "所有服务启动完成！"
-    echo "当前运行的服务："
-    echo "bento 服务 (screen 会话名: bento)"
-    echo "broker 服务 (screen 会话名: broker)"
-    echo "在 screen 会话中："
-    echo "按 Ctrl+A 然后按 D 可以断开连接但保持程序运行"
     echo "脚本执行完成！"
 
     # 安装完成后返回主菜单
@@ -429,9 +390,20 @@ function check_stake_balance() {
     echo "----------------------------------------"
     
     # 检查环境变量是否设置
-    if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
-        echo "错误：环境变量未设置"
+    if [ ! -f "boundless/.env.eth-sepolia" ]; then
+        echo "错误：未找到 .env.eth-sepolia 文件"
         echo "请先运行选项 1 完成安装部署"
+        echo "按回车键返回主菜单..."
+        read
+        return
+    fi
+
+    # 加载环境变量
+    cd boundless
+    source .env.eth-sepolia
+    if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
+        echo "错误：环境变量未正确加载"
+        echo "请检查 .env.eth-sepolia 文件内容"
         echo "按回车键返回主菜单..."
         read
         return
@@ -492,11 +464,10 @@ function view_broker_logs() {
         echo "是否要启动 broker 服务？(y/n)"
         read -p "请输入选项 [y/n]: " start_choice
         if [[ "$start_choice" == "y" || "$start_choice" == "Y" ]]; then
-            echo "正在启动 broker 服务..."
-            # 直接启动 broker 服务（后台运行）
-            just broker &
-            sleep 2
-            echo "broker 服务已在后台启动"
+            echo "请在新终端中运行以下命令以启动 broker 服务："
+            echo "cd $(pwd) && just broker"
+            echo "完成后，按回车键继续..."
+            read
         else
             echo "按回车键返回主菜单..."
             read
@@ -533,8 +504,6 @@ function remove_node() {
     echo "1. 停止 broker 服务"
     echo "2. 清理所有节点数据"
     echo "3. 删除整个 boundless 目录"
-    echo "----------------------------------------"
-    echo "此操作不可恢复，请确保您已备份重要数据"
     echo "----------------------------------------"
     
     read -p "是否确定要删除节点？(y/n): " confirm
