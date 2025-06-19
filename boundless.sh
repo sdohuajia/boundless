@@ -113,12 +113,10 @@ function install_node() {
         echo "克隆失败，请检查网络连接或仓库地址是否正确"
         exit 1
     fi
-    echo "克隆后目录内容："
-    ls -l boundless
 
     cd boundless
-    echo "切换到 release-0.10.1 分支..."
-    git checkout release-0.10.1
+    echo "切换到 release-0.10 分支..."
+    git checkout release-0.10
     if [ $? -ne 0 ]; then
         echo "切换分支失败，请检查分支名称是否正确"
         exit 1
