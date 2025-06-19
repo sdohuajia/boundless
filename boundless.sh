@@ -113,12 +113,6 @@ function install_node() {
     fi
 
     cd boundless
-    echo "切换到 release-0.10 分支..."
-    git checkout release-0.10
-    if [ $? -ne 0 ]; then
-        echo "切换分支失败，请检查分支名称是否正确"
-        exit 1
-    fi
 
     echo "安装 Rust 和相关工具链..."
     echo "正在安装 rustup..."
