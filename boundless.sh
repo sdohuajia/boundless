@@ -122,14 +122,6 @@ function install_node() {
         exit 1
     fi
 
-    echo "执行 setup.sh 脚本..."
-    chmod +x scripts/setup.sh
-    ./scripts/setup.sh
-    if [ $? -ne 0 ]; then
-        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
-        exit 1
-    fi
-
     echo "安装 Rust 和相关工具链..."
     echo "正在安装 rustup..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -237,6 +229,14 @@ function install_node() {
         exit 1
     fi
     echo "bento-client 验证通过"
+
+    echo "执行 setup.sh 脚本..."
+    chmod +x scripts/setup.sh
+    ./scripts/setup.sh
+    if [ $? -ne 0 ]; then
+        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
+        exit 1
+    fi
 
     echo "正在安装 boundless-cli..."
     if cargo install --list | grep -q 'boundless-cli'; then
