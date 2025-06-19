@@ -228,8 +228,7 @@ function install_node() {
     echo "boundless-cli 验证通过"
 
     echo "执行 setup.sh 脚本..."
-    chmod +x ./scripts/setup.sh
-    ./scripts/setup.sh
+    bash scripts/setup.sh
     if [ $? -ne 0 ]; then
         echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
         exit 1
@@ -289,9 +288,7 @@ function install_node() {
         sed -i "/x-exec-agent-common: &exec-agent-common/,/environment:/s/cpus: .*/cpus: ${CPU_INPUT}/" "$COMPOSE_FILE"
         echo "compose.yml 已根据您的输入自动修改：内存${MEM_INPUT}G，CPU核数${CPU_INPUT}"
     fi
-    # ===================== 新增结束 =====================
 
-    # ===================== 新增：自动检测GPU内存和核心数，用户填写并修改compose.yml =====================
     # 检查是否有nvidia-smi命令
     if command -v nvidia-smi &> /dev/null; then
         GPU_MEM_TOTAL=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -n1)
