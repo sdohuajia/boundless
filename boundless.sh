@@ -104,13 +104,17 @@ function install_node() {
     fi
 
     echo "开始克隆仓库..."
-    if [ ! -d "boundless" ]; then
-        git clone https://github.com/boundless-xyz/boundless
-        if [ $? -ne 0 ]; then
-            echo "克隆失败，请检查网络连接或仓库地址是否正确"
-            exit 1
-        fi
+    if [ -d "boundless" ]; then
+        echo "检测到已有 boundless 目录，自动删除以保证全新克隆..."
+        rm -rf boundless
     fi
+    git clone https://github.com/boundless-xyz/boundless
+    if [ $? -ne 0 ]; then
+        echo "克隆失败，请检查网络连接或仓库地址是否正确"
+        exit 1
+    fi
+    echo "克隆后目录内容："
+    ls -l boundless
 
     cd boundless
     echo "切换到 release-0.10.1 分支..."
