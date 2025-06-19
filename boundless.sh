@@ -228,7 +228,8 @@ function install_node() {
     echo "boundless-cli 验证通过"
 
     echo "执行 setup.sh 脚本..."
-    bash scripts/setup.sh
+    chmod +x scripts/setup.sh
+    ./scripts/setup.sh
     if [ $? -ne 0 ]; then
         echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
         exit 1
