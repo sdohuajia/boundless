@@ -167,19 +167,28 @@ function install_node() {
     echo "rzup 验证通过"
 
     echo "正在安装 RISC Zero Rust 工具链..."
-    rzup install rust
-    if [ $? -ne 0 ]; then
-        echo "RISC Zero Rust 工具链安装失败，请手动安装"
-        exit 1
+    if rzup toolchain list | grep -q 'risc0'; then
+        echo "RISC Zero Rust 工具链已安装，跳过安装。"
+    else
+        rzup install rust
+        if [ $? -ne 0 ]; then
+            echo "RISC Zero Rust 工具链安装失败，请手动安装"
+            echo "如遇 GitHub API rate limit，请在 https://github.com/settings/tokens 生成token并 export GITHUB_TOKEN=你的token 后重试。"
+            exit 1
+        fi
     fi
     echo "RISC Zero Rust 工具链安装完成"
 
     echo "正在安装 cargo-risczero..."
-    cargo install cargo-risczero
-    rzup install cargo-risczero
-    if [ $? -ne 0 ]; then
-        echo "cargo-risczero 安装失败，请检查网络连接或手动安装"
-        exit 1
+    if cargo install --list | grep -q 'cargo-risczero'; then
+        echo "cargo-risczero 已安装，跳过安装。"
+    else
+        cargo install cargo-risczero
+        rzup install cargo-risczero
+        if [ $? -ne 0 ]; then
+            echo "cargo-risczero 安装失败，请检查网络连接或手动安装"
+            exit 1
+        fi
     fi
     echo "cargo-risczero 安装完成"
 
@@ -192,12 +201,16 @@ function install_node() {
     echo "rustup 更新完成"
 
     echo "正在安装 bento-client..."
-    cargo install --git https://github.com/risc0/risc0 bento-client --bin bento_cli
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-    source ~/.bashrc
-    if [ $? -ne 0 ]; then
-        echo "bento-client 安装失败，请检查网络连接或手动安装"
-        exit 1
+    if cargo install --list | grep -q 'bento_cli'; then
+        echo "bento-client 已安装，跳过安装。"
+    else
+        cargo install --git https://github.com/risc0/risc0 bento-client --bin bento_cli
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+        source ~/.bashrc
+        if [ $? -ne 0 ]; then
+            echo "bento-client 安装失败，请检查网络连接或手动安装"
+            exit 1
+        fi
     fi
     echo "bento-client 安装完成"
 
@@ -210,12 +223,16 @@ function install_node() {
     echo "bento-client 验证通过"
 
     echo "正在安装 boundless-cli..."
-    cargo install --locked boundless-cli
-    export PATH=$PATH:/root/.cargo/bin
-    source ~/.bashrc
-    if [ $? -ne 0 ]; then
-        echo "boundless-cli 安装失败，请检查网络连接或手动安装"
-        exit 1
+    if cargo install --list | grep -q 'boundless-cli'; then
+        echo "boundless-cli 已安装，跳过安装。"
+    else
+        cargo install --locked boundless-cli
+        export PATH=$PATH:/root/.cargo/bin
+        source ~/.bashrc
+        if [ $? -ne 0 ]; then
+            echo "boundless-cli 安装失败，请检查网络连接或手动安装"
+            exit 1
+        fi
     fi
     echo "boundless-cli 安装完成"
 
