@@ -113,6 +113,12 @@ function install_node() {
     fi
 
     cd boundless
+    echo "切换到 release-0.10.1 分支..."
+    git checkout release-0.10.1
+    if [ $? -ne 0 ]; then
+        echo "切换分支失败，请检查分支名称是否正确"
+        exit 1
+    fi
 
     echo "执行 setup.sh 脚本..."
     chmod +x scripts/setup.sh
