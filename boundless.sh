@@ -114,6 +114,14 @@ function install_node() {
 
     cd boundless
 
+    echo "执行 setup.sh 脚本..."
+    chmod +x scripts/setup.sh
+    ./scripts/setup.sh
+    if [ $? -ne 0 ]; then
+        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
+        exit 1
+    fi
+
     echo "安装 Rust 和相关工具链..."
     echo "正在安装 rustup..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -243,14 +251,6 @@ function install_node() {
         exit 1
     fi
     echo "boundless-cli 验证通过"
-
-    echo "执行 setup.sh 脚本..."
-    chmod +x scripts/setup.sh
-    ./scripts/setup.sh
-    if [ $? -ne 0 ]; then
-        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
-        exit 1
-    fi
 
     echo "所有依赖安装完成！"
     echo "请注销并重新登录以使 Docker 组成员身份生效"
