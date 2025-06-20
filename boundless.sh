@@ -173,6 +173,7 @@ function install_node() {
     echo "正在安装 rzup..."
     curl -L https://risczero.com/install | bash
     source ~/.bashrc
+    export PATH="$HOME/.risc0/bin:$PATH"
     if [ $? -ne 0 ]; then
         echo "rzup 安装失败，请检查网络连接或手动安装"
         exit 1
