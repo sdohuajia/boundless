@@ -114,7 +114,20 @@ function install_node() {
         exit 1
     fi
 
+    echo "当前工作目录: $(pwd)"
+    echo "检查 boundless 目录..."
+    if [ ! -d "boundless" ]; then
+        echo "错误：未找到 boundless 目录，请确保已正确克隆仓库"
+        echo "当前目录内容:"
+        ls -la
+        exit 1
+    fi
+
+    echo "找到 boundless 目录，正在切换..."
+    # 切换到 boundless 目录
     cd boundless
+    echo "已切换到 boundless 目录: $(pwd)"
+
     echo "切换到 release-0.10 分支..."
     git checkout release-0.10
     if [ $? -ne 0 ]; then
@@ -294,9 +307,9 @@ function install_node() {
     done
 
     # compose.yml 路径
-    COMPOSE_FILE="boundless/compose.yml"
+    COMPOSE_FILE="compose.yml"
     if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="boundless/docker-compose.yml"
+        COMPOSE_FILE="docker-compose.yml"
     fi
 
     if [ ! -f "$COMPOSE_FILE" ]; then
@@ -342,9 +355,9 @@ function install_node() {
         done
 
         # compose.yml 路径
-        COMPOSE_FILE="boundless/compose.yml"
+        COMPOSE_FILE="compose.yml"
         if [ ! -f "$COMPOSE_FILE" ]; then
-            COMPOSE_FILE="boundless/docker-compose.yml"
+            COMPOSE_FILE="docker-compose.yml"
         fi
 
         if [ ! -f "$COMPOSE_FILE" ]; then
@@ -388,20 +401,19 @@ function install_node() {
     fi
 
     # 避免重复写入，移除旧的 PRIVATE_KEY 和 RPC_URL（如果存在）
-    sed -i '/^export PRIVATE_KEY=/d' boundless/.env.base-sepolia 2>/dev/null
-    sed -i '/^export RPC_URL=/d' boundless/.env.base-sepolia 2>/dev/null
+    sed -i '/^export PRIVATE_KEY=/d' .env.base-sepolia 2>/dev/null
+    sed -i '/^export RPC_URL=/d' .env.base-sepolia 2>/dev/null
 
     # 追加环境变量到 .env.base-sepolia 文件
-    echo "正在将环境变量写入 boundless/.env.base-sepolia..."
-    echo "export PRIVATE_KEY=$PRIVATE_KEY" >> boundless/.env.base-sepolia
-    echo "export RPC_URL=$RPC_URL" >> boundless/.env.base-sepolia
+    echo "正在将环境变量写入 .env.base-sepolia..."
+    echo "export PRIVATE_KEY=$PRIVATE_KEY" >> .env.base-sepolia
+    echo "export RPC_URL=$RPC_URL" >> .env.base-sepolia
 
     # 验证是否写入成功
-    if grep -q "export PRIVATE_KEY=$PRIVATE_KEY" boundless/.env.base-sepolia && grep -q "export RPC_URL=$RPC_URL" boundless/.env.base-sepolia; then
-        echo "boundless/.env.base-sepolia 文件已成功写入！"
-        # 切换到 boundless 目录并加载环境变量
-        echo "正在切换到 boundless 目录并加载环境变量..."
-        cd boundless
+    if grep -q "export PRIVATE_KEY=$PRIVATE_KEY" .env.base-sepolia && grep -q "export RPC_URL=$RPC_URL" .env.base-sepolia; then
+        echo ".env.base-sepolia 文件已成功写入！"
+        # 加载环境变量
+        echo "正在加载环境变量..."
         source .env.base-sepolia
         # 验证环境变量是否加载成功
         if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
@@ -410,7 +422,7 @@ function install_node() {
         fi
         echo "环境变量加载成功！"
     else
-        echo "错误：写入 boundless/.env.base-sepolia 文件失败，请检查文件权限"
+        echo "错误：写入 .env.base-sepolia 文件失败，请检查文件权限"
         exit 1
     fi
 
@@ -427,33 +439,37 @@ function install_node() {
     echo "----------------------------------------"
     echo "请设置存款数量（USDC）："
     echo "注意：请确保您的账户中有足够的 USDC"
+    echo "提示：如果之前已经存过USDC，可以选择跳过此步骤"
     echo "----------------------------------------"
 
-    while true; do
-        read -p "请输入要存入的 USDC 数量（最低5）：" USDC_AMOUNT
-        # 检查输入是否为数字且不少于5
-        if [[ "$USDC_AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$USDC_AMOUNT >= 5" | bc -l) )); then
-            break
-        else
-            echo "错误：请输入不少于5的有效数字"
+    read -p "是否需要存入USDC? (y/n): " NEED_DEPOSIT
+    if [[ "$NEED_DEPOSIT" == "y" || "$NEED_DEPOSIT" == "Y" ]]; then
+        while true; do
+            read -p "请输入要存入的 USDC 数量（最低5）：" USDC_AMOUNT
+            # 检查输入是否为数字且不少于5
+            if [[ "$USDC_AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$USDC_AMOUNT >= 5" | bc -l) )); then
+                break
+            else
+                echo "错误：请输入不少于5的有效数字"
+            fi
+        done
+
+        echo "正在执行存款操作..."
+        echo "存款数量: $USDC_AMOUNT USDC（最低5个，建议多存）"
+        boundless account deposit-stake "$USDC_AMOUNT"
+
+        if [ $? -ne 0 ]; then
+            echo "存款操作失败，请检查："
+            echo "1. 账户余额是否充足"
+            echo "2. 网络连接是否正常"
+            echo "3. 环境变量是否正确设置"
+            exit 1
         fi
-    done
 
-    echo "正在执行存款操作..."
-    echo "存款数量: $USDC_AMOUNT USDC（最低5个，建议多存）"
-    # 确保在 boundless 目录下执行命令
-    cd boundless
-    boundless account deposit-stake "$USDC_AMOUNT"
-
-    if [ $? -ne 0 ]; then
-        echo "存款操作失败，请检查："
-        echo "1. 账户余额是否充足"
-        echo "2. 网络连接是否正常"
-        echo "3. 环境变量是否正确设置"
-        exit 1
+        echo "存款操作完成！"
+    else
+        echo "已跳过USDC存款步骤"
     fi
-
-    echo "存款操作完成！"
 
     # 启动 just broker 前，设置 SEGMENT_SIZE
     echo "----------------------------------------"
@@ -468,9 +484,9 @@ function install_node() {
     done
 
     # compose.yml 路径
-    COMPOSE_FILE="boundless/compose.yml"
+    COMPOSE_FILE="compose.yml"
     if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="boundless/docker-compose.yml"
+        COMPOSE_FILE="docker-compose.yml"
     fi
 
     if [ ! -f "$COMPOSE_FILE" ]; then
@@ -482,7 +498,6 @@ function install_node() {
     fi
 
     # 确保在 boundless 目录下启动 broker
-    cd boundless
     just broker &
     echo "broker 服务已在后台启动。"
 
