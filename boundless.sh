@@ -504,8 +504,8 @@ function install_node() {
     echo "脚本执行完成！"
 
     # 安装完成后返回主菜单
-    echo "按回车键返回主菜单..."
-    read
+    read -n 1 -s -r -p "按任意键返回主菜单..."
+    echo
 }
 
 # 查看质押余额函数
