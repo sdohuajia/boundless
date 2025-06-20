@@ -294,13 +294,7 @@ function install_node() {
     done
 
     # compose.yml 路径
-    COMPOSE_FILE="compose.yml"
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="docker-compose.yml"
-    fi
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="boundless/compose.yml"
-    fi
+    COMPOSE_FILE="boundless/compose.yml"
     if [ ! -f "$COMPOSE_FILE" ]; then
         COMPOSE_FILE="boundless/docker-compose.yml"
     fi
@@ -348,13 +342,7 @@ function install_node() {
         done
 
         # compose.yml 路径
-        COMPOSE_FILE="compose.yml"
-        if [ ! -f "$COMPOSE_FILE" ]; then
-            COMPOSE_FILE="docker-compose.yml"
-        fi
-        if [ ! -f "$COMPOSE_FILE" ]; then
-            COMPOSE_FILE="boundless/compose.yml"
-        fi
+        COMPOSE_FILE="boundless/compose.yml"
         if [ ! -f "$COMPOSE_FILE" ]; then
             COMPOSE_FILE="boundless/docker-compose.yml"
         fi
@@ -400,19 +388,20 @@ function install_node() {
     fi
 
     # 避免重复写入，移除旧的 PRIVATE_KEY 和 RPC_URL（如果存在）
-    sed -i '/^PRIVATE_KEY=/d' .env.base-sepolia 2>/dev/null
-    sed -i '/^RPC_URL=/d' .env.base-sepolia 2>/dev/null
+    sed -i '/^export PRIVATE_KEY=/d' boundless/.env.base-sepolia 2>/dev/null
+    sed -i '/^export RPC_URL=/d' boundless/.env.base-sepolia 2>/dev/null
 
     # 追加环境变量到 .env.base-sepolia 文件
-    echo "正在将环境变量写入 .env.base-sepolia..."
-    echo "PRIVATE_KEY=$PRIVATE_KEY" >> .env.base-sepolia
-    echo "RPC_URL=$RPC_URL" >> .env.base-sepolia
+    echo "正在将环境变量写入 boundless/.env.base-sepolia..."
+    echo "export PRIVATE_KEY=$PRIVATE_KEY" >> boundless/.env.base-sepolia
+    echo "export RPC_URL=$RPC_URL" >> boundless/.env.base-sepolia
 
     # 验证是否写入成功
-    if grep -q "PRIVATE_KEY=$PRIVATE_KEY" .env.base-sepolia && grep -q "RPC_URL=$RPC_URL" .env.base-sepolia; then
-        echo ".env.base-sepolia 文件已成功写入！"
-        # 加载 .env.base-sepolia 文件
-        echo "正在加载环境变量..."
+    if grep -q "export PRIVATE_KEY=$PRIVATE_KEY" boundless/.env.base-sepolia && grep -q "export RPC_URL=$RPC_URL" boundless/.env.base-sepolia; then
+        echo "boundless/.env.base-sepolia 文件已成功写入！"
+        # 切换到 boundless 目录并加载环境变量
+        echo "正在切换到 boundless 目录并加载环境变量..."
+        cd boundless
         source .env.base-sepolia
         # 验证环境变量是否加载成功
         if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
@@ -421,18 +410,19 @@ function install_node() {
         fi
         echo "环境变量加载成功！"
     else
-        echo "错误：写入 .env.base-sepolia 文件失败，请检查文件权限"
+        echo "错误：写入 boundless/.env.base-sepolia 文件失败，请检查文件权限"
         exit 1
     fi
 
     # 设置 testnet 环境
     echo "正在设置 testnet 环境..."
-    source <(just env testnet)
-    if [ $? -ne 0 ]; then
-        echo "设置 testnet 环境失败，请检查网络连接或手动设置"
-        exit 1
-    fi
-    echo "testnet 环境设置完成！"
+    # 注释掉有问题的 just env testnet 命令，因为环境变量已经通过 .env.base-sepolia 文件设置
+    # source <(just env testnet)
+    # if [ $? -ne 0 ]; then
+    #     echo "设置 testnet 环境失败，请检查网络连接或手动设置"
+    #     exit 1
+    # fi
+    echo "testnet 环境设置完成！环境变量已通过 .env.base-sepolia 文件配置"
 
     echo "----------------------------------------"
     echo "请设置存款数量（USDC）："
@@ -451,6 +441,8 @@ function install_node() {
 
     echo "正在执行存款操作..."
     echo "存款数量: $USDC_AMOUNT USDC（最低5个，建议多存）"
+    # 确保在 boundless 目录下执行命令
+    cd boundless
     boundless account deposit-stake "$USDC_AMOUNT"
 
     if [ $? -ne 0 ]; then
@@ -476,13 +468,7 @@ function install_node() {
     done
 
     # compose.yml 路径
-    COMPOSE_FILE="compose.yml"
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="docker-compose.yml"
-    fi
-    if [ ! -f "$COMPOSE_FILE" ]; then
-        COMPOSE_FILE="boundless/compose.yml"
-    fi
+    COMPOSE_FILE="boundless/compose.yml"
     if [ ! -f "$COMPOSE_FILE" ]; then
         COMPOSE_FILE="boundless/docker-compose.yml"
     fi
@@ -495,6 +481,8 @@ function install_node() {
         echo "compose.yml 已根据您的输入自动修改 SEGMENT_SIZE: $SEGMENT_SIZE"
     fi
 
+    # 确保在 boundless 目录下启动 broker
+    cd boundless
     just broker &
     echo "broker 服务已在后台启动。"
 
