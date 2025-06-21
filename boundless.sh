@@ -245,7 +245,7 @@ function install_node() {
     echo "bento-client 验证通过"
 
     echo "执行 setup.sh 脚本..."
-    chmod +x scripts/setup.sh
+    chmod +x setup.sh
     ./scripts/setup.sh
     if [ $? -ne 0 ]; then
         echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
