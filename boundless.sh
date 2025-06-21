@@ -455,8 +455,7 @@ function install_node() {
     if [[ "$NEED_DEPOSIT" == "y" || "$NEED_DEPOSIT" == "Y" ]]; then
         while true; do
             read -p "请输入要存入的 USDC 数量（最低5）：" USDC_AMOUNT
-            # 检查输入是否为数字且不少于5
-            if [[ "$USDC_AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$USDC_AMOUNT >= 5" | bc -l) )); then
+            if [[ "$USDC_AMOUNT" =~ ^[0-9]+(\.[0-9]+)?$ ]] && awk "BEGIN{exit !($USDC_AMOUNT >= 5)}"; then
                 break
             else
                 echo "错误：请输入不少于5的有效数字"
