@@ -53,19 +53,35 @@ function install_node() {
         exit 1
     fi
 
-    echo "检查 Docker 安装状态..."
+    echo "检查并安装 Docker..."
     if ! command -v docker &> /dev/null; then
-        echo "正在安装 Docker..."
+        echo "Docker 未安装，正在安装..."
+        apt-get install -y apt-transport-https ca-certificates curl software-properties-common -o Dpkg::Options::="--force-confold"
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         apt-get update
-        apt-get install -y ca-certificates curl gnupg
-        install -m 0755 -d /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        chmod a+r /etc/apt/keyrings/docker.gpg
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-        apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-        usermod -aG docker $SUDO_USER
-        echo "Docker 安装完成，请注销并重新登录以使组成员身份生效"
+        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold" || { echo "Docker 安装失败"; exit 1; }
+        echo "Docker 安装完成"
+    else
+        echo "Docker 已安装，检查更新..."
+        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold"
+    fi
+
+    # 启动并启用 Docker 服务
+    systemctl start docker || { echo "Docker 服务启动失败"; exit 1; }
+    systemctl enable docker || { echo "Docker 服务启用失败"; exit 1; }
+
+    # 检查并安装 Docker Compose
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+        echo "Docker Compose 未安装，正在安装最新版本..."
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        docker-compose --version &> /dev/null || { echo "Docker Compose 安装失败"; exit 1; }
+        echo "Docker Compose 安装完成"
+    else
+        echo "Docker Compose 已安装，检查更新..."
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
     fi
 
     echo "检查 NVIDIA Docker 支持..."
