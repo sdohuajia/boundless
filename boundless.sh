@@ -96,7 +96,13 @@ function install_node() {
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
         apt-get update
         apt-get install -y nvidia-container-toolkit
-        systemctl restart docker
+        if command -v systemctl &> /dev/null; then
+            systemctl restart docker || echo "systemctl restart docker 失败，已跳过（当前为容器或非 systemd 环境）"
+        elif command -v service &> /dev/null; then
+            service docker restart || echo "service restart docker 失败，已跳过（当前为容器或非 systemd 环境）"
+        else
+            echo "未检测到 systemctl/service，跳过 Docker 重启"
+        fi
         echo "NVIDIA Container Toolkit 安装完成"
     fi
 
