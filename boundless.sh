@@ -53,39 +53,19 @@ function install_node() {
         exit 1
     fi
 
-    echo "检查并安装 Docker..."
+    echo "检查 Docker 安装状态..."
     if ! command -v docker &> /dev/null; then
-        echo "Docker 未安装，正在安装..."
+        echo "正在安装 Docker..."
         apt-get update
-        apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        apt-get install -y ca-certificates curl gnupg
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
         apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io
-        echo "Docker 安装完成"
-    else
-        echo "Docker 已安装，检查更新..."
-        apt-get install -y docker-ce docker-ce-cli containerd.io
-    fi
-
-    # 检查 Docker 服务是否已运行（仅在有 service 命令时尝试启动）
-    if command -v service &> /dev/null; then
-        service docker start || echo "service 启动 docker 失败，可能已在容器或非 systemd 环境，已跳过"
-    else
-        echo "未检测到 service 命令，跳过 Docker 服务启动"
-    fi
-
-    # 检查并安装 Docker Compose
-    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-        echo "Docker Compose 未安装，正在安装最新版本..."
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-        docker-compose --version &> /dev/null || { echo "Docker Compose 安装失败"; exit 1; }
-        echo "Docker Compose 安装完成"
-    else
-        echo "Docker Compose 已安装，检查更新..."
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
+        apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        usermod -aG docker $SUDO_USER
+        echo "Docker 安装完成，请注销并重新登录以使组成员身份生效"
     fi
 
     echo "检查 NVIDIA Docker 支持..."
@@ -96,13 +76,7 @@ function install_node() {
         curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list
         apt-get update
         apt-get install -y nvidia-container-toolkit
-        if command -v systemctl &> /dev/null; then
-            systemctl restart docker || echo "systemctl restart docker 失败，已跳过（当前为容器或非 systemd 环境）"
-        elif command -v service &> /dev/null; then
-            service docker restart || echo "service restart docker 失败，已跳过（当前为容器或非 systemd 环境）"
-        else
-            echo "未检测到 systemctl/service，跳过 Docker 重启"
-        fi
+        systemctl restart docker
         echo "NVIDIA Container Toolkit 安装完成"
     fi
 
