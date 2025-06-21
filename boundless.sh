@@ -103,6 +103,18 @@ function install_node() {
         echo "just 安装完成"
     fi
 
+    echo "检查 bc 计算器依赖..."
+    if ! command -v bc &> /dev/null; then
+        echo "正在安装 bc..."
+        apt-get update
+        apt-get install -y bc
+        if [ $? -ne 0 ]; then
+            echo "bc 安装失败，请手动安装"
+            exit 1
+        fi
+        echo "bc 安装完成"
+    fi
+
     echo "开始克隆仓库..."
     if [ -d "boundless" ]; then
         echo "检测到已有 boundless 目录，自动删除以保证全新克隆..."
