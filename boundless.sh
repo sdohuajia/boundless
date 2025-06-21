@@ -56,23 +56,23 @@ function install_node() {
     echo "检查并安装 Docker..."
     if ! command -v docker &> /dev/null; then
         echo "Docker 未安装，正在安装..."
-        apt-get install -y apt-transport-https ca-certificates curl software-properties-common -o Dpkg::Options::="--force-confold"
+        apt-get update
+        apt-get install -y apt-transport-https ca-certificates curl software-properties-common
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
         add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         apt-get update
-        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold" || { echo "Docker 安装失败"; exit 1; }
+        apt-get install -y docker-ce docker-ce-cli containerd.io
         echo "Docker 安装完成"
     else
         echo "Docker 已安装，检查更新..."
-        apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold"
+        apt-get install -y docker-ce docker-ce-cli containerd.io
     fi
 
-    # 启动并启用 Docker 服务（仅在支持 systemctl 的环境下）
-    if command -v systemctl &> /dev/null; then
-        systemctl start docker || echo "Docker 服务启动失败，已跳过（当前可能为容器或非 systemd 环境）"
-        systemctl enable docker || echo "Docker 服务启用失败，已跳过（当前可能为容器或非 systemd 环境）"
+    # 检查 Docker 服务是否已运行（仅在有 service 命令时尝试启动）
+    if command -v service &> /dev/null; then
+        service docker start || echo "service 启动 docker 失败，可能已在容器或非 systemd 环境，已跳过"
     else
-        echo "未检测到 systemctl，跳过 Docker 服务启动（当前为容器或非 systemd 环境）"
+        echo "未检测到 service 命令，跳过 Docker 服务启动"
     fi
 
     # 检查并安装 Docker Compose
