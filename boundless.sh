@@ -245,22 +245,10 @@ function install_node() {
     echo "bento-client 验证通过"
 
     echo "执行 setup.sh 脚本..."
-    chmod +x scripts/setup.sh
-
-    # 开启调试模式，显示每一步
-    set -x
-
-    # 执行并捕获输出和错误
-    ./scripts/setup.sh 2>&1 | tee setup_sh.log
-    EXIT_CODE=${PIPESTATUS[0]}
-
-    # 关闭调试模式
-    set +x
-
-    if [ $EXIT_CODE -ne 0 ]; then
-        echo "执行 setup.sh 失败，详细日志如下："
-        cat setup_sh.log
-        echo "请根据上面日志排查问题，或将日志内容发给技术支持。"
+    chmod +x setup.sh
+    ./scripts/setup.sh
+    if [ $? -ne 0 ]; then
+        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
         exit 1
     fi
 
