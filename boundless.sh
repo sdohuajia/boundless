@@ -69,10 +69,10 @@ function install_node() {
 
     # 启动并启用 Docker 服务（仅在支持 systemctl 的环境下）
     if command -v systemctl &> /dev/null; then
-        systemctl start docker || { echo "Docker 服务启动失败"; exit 1; }
-        systemctl enable docker || { echo "Docker 服务启用失败"; exit 1; }
+        systemctl start docker || echo "Docker 服务启动失败，已跳过（当前可能为容器或非 systemd 环境）"
+        systemctl enable docker || echo "Docker 服务启用失败，已跳过（当前可能为容器或非 systemd 环境）"
     else
-        echo "未检测到 systemctl，跳过 Docker 服务启动（可能已在容器或非 systemd 环境）"
+        echo "未检测到 systemctl，跳过 Docker 服务启动（当前为容器或非 systemd 环境）"
     fi
 
     # 检查并安装 Docker Compose
