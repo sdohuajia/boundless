@@ -246,11 +246,7 @@ function install_node() {
 
     echo "执行 setup.sh 脚本..."
     chmod +x scripts/setup.sh
-    ./scripts/setup.sh
-    if [ $? -ne 0 ]; then
-        echo "执行 setup.sh 失败，请检查脚本权限或手动执行"
-        exit 1
-    fi
+    ./scripts/setup.sh || echo "setup.sh 执行失败，但继续执行后续步骤。"
 
     echo "正在安装 boundless-cli..."
     if cargo install --list | grep -q 'boundless-cli'; then
