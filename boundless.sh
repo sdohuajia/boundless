@@ -67,9 +67,13 @@ function install_node() {
         apt-get install -y docker-ce docker-ce-cli containerd.io -o Dpkg::Options::="--force-confold"
     fi
 
-    # 启动并启用 Docker 服务
-    systemctl start docker || { echo "Docker 服务启动失败"; exit 1; }
-    systemctl enable docker || { echo "Docker 服务启用失败"; exit 1; }
+    # 启动并启用 Docker 服务（仅在支持 systemctl 的环境下）
+    if command -v systemctl &> /dev/null; then
+        systemctl start docker || { echo "Docker 服务启动失败"; exit 1; }
+        systemctl enable docker || { echo "Docker 服务启用失败"; exit 1; }
+    else
+        echo "未检测到 systemctl，跳过 Docker 服务启动（可能已在容器或非 systemd 环境）"
+    fi
 
     # 检查并安装 Docker Compose
     if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
