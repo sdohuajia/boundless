@@ -382,20 +382,19 @@ function install_node() {
         echo "未检测到NVIDIA GPU，跳过GPU相关配置。"
     fi
 
-    # 获取用户输入并写入 .env.base-sepolia 文件
+    # 获取用户输入并写入 .env.base 文件
     echo "请设置您的环境变量："
-    echo "提示：请使用 Base 测试网的 Alchemy RPC URL"
-    echo "格式：https://base-sepolia.g.alchemy.com/v2/YOUR-API-KEY"
+    echo "提示：请使用 Base 主网的 Alchemy RPC URL"
     echo "您可以在 https://www.alchemy.com/ 注册并获取 API KEY"
-    echo "注意：请确保选择 Base Sepolia 网络"
+    echo "注意：请确保选择 Base 网络"
     echo "----------------------------------------"
 
     read -p "请输入您的 PRIVATE_KEY: " PRIVATE_KEY
-    read -p "请输入您的 Base 测试网 RPC_URL: " RPC_URL
+    read -p "请输入您的 Base 主网 RPC_URL: " RPC_URL
 
-    # 检查 RPC_URL 是否包含 base-sepolia
-    if [[ "$RPC_URL" != *"base-sepolia"* ]]; then
-        echo "警告：您使用的不是 Base Sepolia 网络的 RPC URL，这可能会导致连接问题"
+    # 检查 RPC_URL 是否包含 base
+    if [[ "$RPC_URL" != *"base"* ]]; then
+        echo "警告：您使用的不是 Base 网络的 RPC URL，这可能会导致连接问题"
         read -p "是否继续使用当前 RPC URL？(y/n): " confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
             echo "已取消设置，请重新运行脚本"
@@ -410,40 +409,40 @@ function install_node() {
     fi
 
     # 避免重复写入，移除旧的 PRIVATE_KEY 和 RPC_URL（如果存在）
-    sed -i '/^export PRIVATE_KEY=/d' .env.base-sepolia 2>/dev/null
-    sed -i '/^export RPC_URL=/d' .env.base-sepolia 2>/dev/null
+    sed -i '/^export PRIVATE_KEY=/d' .env.base 2>/dev/null
+    sed -i '/^export RPC_URL=/d' .env.base 2>/dev/null
 
-    # 追加环境变量到 .env.base-sepolia 文件
-    echo "正在将环境变量写入 .env.base-sepolia..."
-    echo "export PRIVATE_KEY=$PRIVATE_KEY" >> .env.base-sepolia
-    echo "export RPC_URL=$RPC_URL" >> .env.base-sepolia
+    # 追加环境变量到 .env.base 文件
+    echo "正在将环境变量写入 .env.base..."
+    echo "export PRIVATE_KEY=$PRIVATE_KEY" >> .env.base
+    echo "export RPC_URL=$RPC_URL" >> .env.base
 
     # 验证是否写入成功
-    if grep -q "export PRIVATE_KEY=$PRIVATE_KEY" .env.base-sepolia && grep -q "export RPC_URL=$RPC_URL" .env.base-sepolia; then
-        echo ".env.base-sepolia 文件已成功写入！"
+    if grep -q "export PRIVATE_KEY=$PRIVATE_KEY" .env.base && grep -q "export RPC_URL=$RPC_URL" .env.base; then
+        echo ".env.base 文件已成功写入！"
         # 加载环境变量
         echo "正在加载环境变量..."
-        source .env.base-sepolia
+        source .env.base
         # 验证环境变量是否加载成功
         if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
-            echo "错误：加载 .env.base-sepolia 文件失败，请检查文件内容"
+            echo "错误：加载 .env.base 文件失败，请检查文件内容"
             exit 1
         fi
         echo "环境变量加载成功！"
     else
-        echo "错误：写入 .env.base-sepolia 文件失败，请检查文件权限"
+        echo "错误：写入 .env.base 文件失败，请检查文件权限"
         exit 1
     fi
 
     # 设置 testnet 环境
     echo "正在设置 testnet 环境..."
-    # 注释掉有问题的 just env testnet 命令，因为环境变量已经通过 .env.base-sepolia 文件设置
+    # 注释掉有问题的 just env testnet 命令，因为环境变量已经通过 .env.base 文件设置
     # source <(just env testnet)
     # if [ $? -ne 0 ]; then
     #     echo "设置 testnet 环境失败，请检查网络连接或手动设置"
     #     exit 1
     # fi
-    echo "testnet 环境设置完成！环境变量已通过 .env.base-sepolia 文件配置"
+    echo "testnet 环境设置完成！环境变量已通过 .env.base 文件配置"
 
     echo "----------------------------------------"
     echo "请设置存款数量（USDC）："
@@ -523,8 +522,8 @@ function check_stake_balance() {
     echo "----------------------------------------"
     
     # 检查环境变量是否设置
-    if [ ! -f "boundless/.env.base-sepolia" ]; then
-        echo "错误：未找到 .env.base-sepolia 文件"
+    if [ ! -f "boundless/.env.base" ]; then
+        echo "错误：未找到 .env.base 文件"
         echo "请先运行选项 1 完成安装部署"
         echo "按回车键返回主菜单..."
         read
@@ -533,10 +532,10 @@ function check_stake_balance() {
 
     # 加载环境变量
     cd boundless
-    source .env.base-sepolia
+    source .env.base
     if [ -z "$PRIVATE_KEY" ] || [ -z "$RPC_URL" ]; then
         echo "错误：环境变量未正确加载"
-        echo "请检查 .env.base-sepolia 文件内容"
+        echo "请检查 .env.base 文件内容"
         echo "按回车键返回主菜单..."
         read
         return
