@@ -436,7 +436,7 @@ function install_node() {
 
     # 设置 testnet 环境
     echo "正在设置 testnet 环境..."
-    # 注释掉有问题的 just env testnet 命令，因为环境变量已经通过 .env.base 文件设置
+    # 环境变量已经通过 .env.base 文件设置
     # source <(just env testnet)
     # if [ $? -ne 0 ]; then
     #     echo "设置 testnet 环境失败，请检查网络连接或手动设置"
